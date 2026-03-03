@@ -1,4 +1,4 @@
-# 🚀 Discord Webhook Proxy
+# 🌐 Discord Webhook Proxy
 
 A simple, lightweight, and easy-to-deploy Discord webhook proxy that works with both Cloudflare Workers and Vercel Serverless Functions.
 
