@@ -10,35 +10,33 @@ A simple, lightweight, and easy-to-deploy Discord proxy that works with both Clo
 
 | Platform | Deploy |
 |----------|--------|
-| **Cloudflare Workers** | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/rhuda21/dcwebhookproxy.git) |
-| **Vercel** | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frhuda21%2Fdcwebhookproxy.git) |
-| **Netlify** | [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/integration/start/deploy?repository=https://github.com/rhuda21/dcwebhookproxy.git) |
+| **Cloudflare Workers** | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/rhuda21/dcproxy.git) |
+| **Vercel** | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frhuda21%2Fdcproxy.git) |
+| **Netlify** | [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/integration/start/deploy?repository=https://github.com/rhuda21/dcproxy.git) |
 
-## 💻 Code
+## 💻 Code - Standalone
 
 ```javascript
-export default {
-  async fetch(request) {
-    const url = new URL(request.url);
-    const webhookMatch = url.pathname.match(/^\/api\/webhooks\/(\d+)\/([^\/]+)/);
-    const apiMatch = url.pathname.match(/^\/discord(\/.*)?$/);
-
-    let targetUrl;
-    if (webhookMatch) {
-      targetUrl = `https://discord.com/api/webhooks/${webhookMatch[1]}/${webhookMatch[2]}`;
-    } else if (apiMatch) {
-      targetUrl = `https://discord.com/api${apiMatch[1] || ""}${url.search}`;
-    } else {
-      return new Response("Use: /api/webhooks/ID/TOKEN or /discord/v10/...");
-    }
-
-    const response = await fetch(targetUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.method !== "GET" && request.method !== "HEAD" ? request.body : null,
-    });
-
-    const body = response.status === 204 ? null : await response.text();
-    return new Response(body, { status: response.status });
+import http from "http";
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const webhookMatch = url.pathname.match(/^\/api\/webhooks\/(\d+)\/([^\/]+)/);
+  const apiMatch = url.pathname.match(/^\/discord(\/.*)?$/);
+  let targetUrl;
+  if (webhookMatch) {
+    targetUrl = `https://discord.com/api/webhooks/${webhookMatch[1]}/${webhookMatch[2]}`;
+  } else if (apiMatch) {
+    targetUrl = `https://discord.com/api${apiMatch[1] || ""}${url.search}`;
+  } else {
+    res.writeHead(200);
+    return res.end("Use: /api/webhooks/ID/TOKEN or /discord/v10/...");
   }
-}
+  const response = await fetch(targetUrl, {
+    method: req.method,
+    headers: req.headers,
+    body: req.method !== "GET" && req.method !== "HEAD" ? req : null,
+  });
+  const body = response.status === 204 ? "" : await response.text();
+  res.writeHead(response.status);
+  res.end(body);
+}).listen(3000);
