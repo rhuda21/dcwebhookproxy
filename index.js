@@ -23,5 +23,3 @@ export default {
     return new Response(body, { status: response.status });
   }
 }
-
-export const config = { runtime: "edge" };
